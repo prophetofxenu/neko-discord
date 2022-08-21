@@ -54,7 +54,7 @@ if (!HOST_URL) {
 
 const expServer = express();
 const EXPRESS_PORT = process.env.EXPRESS_PORT || 8080;
-expServer.use(bodyParser);
+expServer.use(bodyParser.json());
 
 const discordClient = new Client({ intents: [GatewayIntentBits.Guilds] });
 discordClient.once('ready', () => {
@@ -65,6 +65,7 @@ discordClient.once('ready', () => {
   await sequelize.sync({ alter: true });
 
   const ctx: Context = {
+    discordClient: discordClient,
     db: db,
     info: {
       nekoDoUrl: NEKO_DO_URL,
@@ -107,7 +108,7 @@ discordClient.once('ready', () => {
     }
   });
 
-  expServer.put('/status', async (req, res) => {
+  expServer.post('/status', async (req, res) => {
     res.status(200).send();
     await handleStatusUpdate(ctx, req.body);
   });
