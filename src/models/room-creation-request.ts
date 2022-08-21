@@ -22,6 +22,10 @@ function roomCreationRequest(sequelize: Sequelize) {
     },
     admin_password: {
       type: DataTypes.STRING
+    },
+    submitted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     }
   }, {
     indexes: [

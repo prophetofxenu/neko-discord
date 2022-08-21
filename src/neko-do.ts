@@ -45,7 +45,10 @@ export async function submitRoomRequest(ctx: Context, request: any) {
   };
 
   const response = await makeRequest(ctx, 'POST', 'room', body);
-  logger.debug(response);
+  logger.debug('Received response from neko-do', response);
+
+  request.submitted = true;
+  await request.save();
 }
 
 

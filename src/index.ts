@@ -10,7 +10,7 @@ import logger from 'winston';
 
 import { CommandHandler, Context } from './util';
 import setupDb from './models/setup';
-import { matchModal, matchSelectMenu } from './interactions/matcher';
+import respondToNonCommand from './interactions';
 import { handleStatusUpdate, login } from './neko-do';
 
 
@@ -79,14 +79,10 @@ discordClient.once('ready', () => {
   discordClient.on('interactionCreate', async (interaction) => {
     logger.debug('Interaction received', interaction);
 
-    if (interaction.isSelectMenu()) {
-      const response = matchSelectMenu(interaction.customId);
-      await response(ctx, interaction);
-    } else if (interaction.isModalSubmit()) {
-      const response = matchModal(interaction.customId);
-      await response(ctx, interaction);
+    if (!interaction.isChatInputCommand()) {
+      await respondToNonCommand(ctx, interaction);
+      return;
     }
-    if (!interaction.isChatInputCommand()) return;
 
     logger.info('Command received');
 
