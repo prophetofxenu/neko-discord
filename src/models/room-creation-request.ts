@@ -11,6 +11,10 @@ function roomCreationRequest(sequelize: Sequelize) {
       type: DataTypes.BIGINT,
       allowNull: false
     },
+    interactionId: {
+      type: DataTypes.BIGINT,
+      allowNull: false
+    },
     image: {
       type: DataTypes.STRING
     },
@@ -26,6 +30,10 @@ function roomCreationRequest(sequelize: Sequelize) {
     submitted: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
+    },
+    valid: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
     }
   }, {
     indexes: [

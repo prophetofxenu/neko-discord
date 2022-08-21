@@ -87,9 +87,20 @@ export default async function respondToNonCommand(ctx: Context, interaction: Int
     where: {
       channelId: channelId,
       userId: userId,
-      submitted: false
+      submitted: false,
+      valid: true
     }
   });
+
+  if (interactionId === SELECT_RESOLUTION_ID && !roomCreationRequest.image ||
+      interactionId === PW_MODAL_ID && !roomCreationRequest.resolution) {
+    // eslint-disable-next-line no-extra-parens
+    await (interaction as any).update({
+      content: 'This request is stale, please run the /newroom command again or use your latest request.',
+      components: []
+    });
+    return;
+  }
 
   logger.debug(`Responding to request ${roomCreationRequest.id}`);
 

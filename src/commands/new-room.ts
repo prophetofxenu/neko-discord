@@ -20,9 +20,28 @@ module.exports = {
 
       execute: async (interaction: any) => {
 
+        const channelId = BigInt(interaction.channelId);
+        const userId = BigInt(interaction.member.user.id);
+
+        const currentRequests = await ctx.db.RoomCreationRequest.findAll({
+          where: {
+            channelId: channelId,
+            userId: userId,
+            submitted: false,
+            valid: true
+          }
+        });
+        if (currentRequests.length > 0) {
+          logger.info(`User ${userId} already has an ongoing request`);
+          currentRequests[0].valid = false;
+          await currentRequests[0].save();
+          logger.debug(`Request ${currentRequests[0]} invalidated`);
+        }
+
         await ctx.db.RoomCreationRequest.create({
           channelId: BigInt(interaction.channelId),
-          userId: BigInt(interaction.member.user.id)
+          userId: BigInt(interaction.member.user.id),
+          interactionId: BigInt(interaction.id)
         });
 
         const row = new ActionRowBuilder()
