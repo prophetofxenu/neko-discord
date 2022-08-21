@@ -1,5 +1,9 @@
-import { Client, Collection, GatewayIntentBits, SelectMenuInteraction } from 'discord.js';
-import fs, { appendFile } from 'fs';
+import {
+  Client,
+  Collection,
+  GatewayIntentBits,
+} from 'discord.js';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import path from 'path';
 import process from 'process';
@@ -8,10 +12,16 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import logger from 'winston';
 
-import { CommandHandler, Context } from './util';
+import {
+  CommandHandler,
+  Context
+} from './util';
 import setupDb from './models/setup';
 import respondToNonCommand from './interactions';
-import { handleStatusUpdate, login } from './neko-do';
+import {
+  handleStatusUpdate,
+  login
+} from './neko-do';
 
 
 logger.add(new logger.transports.Console({ level: 'debug', format: logger.format.simple() }));

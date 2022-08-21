@@ -1,4 +1,3 @@
-import { ModelStatic } from 'sequelize/types';
 import { Context } from './util';
 import axios from 'axios';
 import logger from 'winston';

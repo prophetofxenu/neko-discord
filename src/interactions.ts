@@ -1,4 +1,13 @@
-import { ActionRowBuilder, CacheType, Interaction, ModalActionRowComponentBuilder, ModalBuilder, SelectMenuBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import {
+  ActionRowBuilder,
+  CacheType,
+  Interaction,
+  ModalActionRowComponentBuilder,
+  ModalBuilder,
+  SelectMenuBuilder,
+  TextInputBuilder,
+  TextInputStyle
+} from 'discord.js';
 import { generateMultiple } from 'generate-password';
 import logger from 'winston';
 import { submitRoomRequest } from './neko-do';
