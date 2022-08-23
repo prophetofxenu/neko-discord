@@ -1,7 +1,7 @@
 import { Context } from './util';
 import axios from 'axios';
 import logger from 'winston';
-import { TextChannel } from 'discord.js';
+import { EmbedBuilder, TextChannel } from 'discord.js';
 
 
 async function makeRequest(ctx: Context, method: string, route: string, body: any) {
@@ -79,6 +79,15 @@ export async function handleStatusUpdate(ctx: Context, body: any) {
     return;
   }
 
+  const name = body.name;
+  const url = `https://${body.url}`;
+  const image = body.image;
+  const resolution = body.resolution;
+  const fps = body.fps;
+  const password = body.password;
+  const expires = new Date(body.expires);
+  const expireStr = `${expires.getHours()}:${expires.getMinutes()}`;
+
   const roomRequest = await ctx.db.RoomCreationRequest.findOne({
     where: {
       id: room.requestId
@@ -86,6 +95,21 @@ export async function handleStatusUpdate(ctx: Context, body: any) {
   });
   const channelId = roomRequest.channelId;
   const channel = await ctx.discordClient.channels.fetch(channelId.toString()) as TextChannel;
-  await channel.send(`Room ${room.id} is ready!`);
-
+  await channel.send({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(0x0099FF)
+        .setTitle(`${name} is ready!`)
+        .setURL(url)
+        .setDescription('Click above link to open room in browser.')
+        .addFields(
+          { name: 'Image', value: image, inline: true },
+          { name: 'Resolution', value: `${resolution}p@${fps}`, inline: true },
+          { name: 'Expires', value: expireStr, inline: true },
+          { name: 'Password', value: password }
+        )
+        .setTimestamp()
+    ]
+  });
+  logger.info(`Room ${room.id} marked as ready in Discord`);
 }
