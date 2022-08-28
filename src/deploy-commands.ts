@@ -21,8 +21,9 @@ const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
-  const command = require(filePath) as CommandHandler;
-  commands.push(command.data.toJSON());
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const command = require(filePath);
+  commands.push(command.build().data.toJSON());
 }
 
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);

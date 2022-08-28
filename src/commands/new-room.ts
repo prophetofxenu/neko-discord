@@ -16,7 +16,7 @@ module.exports = {
     return {
       data: new SlashCommandBuilder()
         .setName('newroom')
-        .setDescription('Choose an image'),
+        .setDescription('Create a new neko room'),
 
       execute: async (interaction: any) => {
 

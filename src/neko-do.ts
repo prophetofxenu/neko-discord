@@ -47,18 +47,31 @@ export async function submitRoomRequest(ctx: Context, request: any) {
   const response = await makeRequest(ctx, 'POST', 'room', body);
   logger.debug('Received response from neko-do', response);
   const nekoDoId = response.data.room.id;
+  const url = response.data.room.url;
 
   request.submitted = true;
   await request.save();
   logger.debug(`Updated request ${request.id}`);
   const room = await ctx.db.Room.create({
     nekoDoId: nekoDoId,
-    requestId: request.id
+    url: url,
+    RoomCreationRequestId: request.id
   });
   await room.save();
   logger.debug(`Created room ${room.id}`);
 
   logger.info(`Room ${room.id} is being created`);
+}
+
+
+export async function deleteRoom(ctx: Context, room: any) {
+
+  const url = `room/${room.dataValues.nekoDoId}`;
+  const response = await makeRequest(ctx, 'DELETE', url, {});
+  logger.debug('Received response from neko-do', response);
+
+  logger.info(`Room ${room.dataValues.id} destroyed`);
+
 }
 
 
@@ -90,7 +103,7 @@ export async function handleStatusUpdate(ctx: Context, body: any) {
 
   const roomRequest = await ctx.db.RoomCreationRequest.findOne({
     where: {
-      id: room.requestId
+      id: room.RoomCreationRequestId
     }
   });
   const channelId = roomRequest.channelId;

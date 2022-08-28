@@ -7,9 +7,8 @@ function setupDb(sequelize: Sequelize) {
   const _roomCreationRequest = roomCreationRequest(sequelize);
   const _room = room(sequelize);
 
-  _roomCreationRequest.hasOne(_room, {
-    foreignKey: 'requestId'
-  });
+  _roomCreationRequest.hasOne(_room);
+  _room.belongsTo(_roomCreationRequest);
 
   return {
     Room: _room,
