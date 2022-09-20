@@ -31,10 +31,6 @@ function roomCreationRequest(sequelize: Sequelize) {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     },
-    valid: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true
-    }
   }, {
     indexes: [
       {

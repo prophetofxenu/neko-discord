@@ -14,36 +14,56 @@ import { submitRoomRequest } from './neko-do';
 import { Context } from './util';
 
 
+export function makeInteractionId(label: string, id: number): string {
+  return `${label}_${id}`;
+}
+
+
+export function getInteractionId(idString: string): { interactionType: string, interactionId: number } {
+  const match = idString.match(/^([^_]+)_(\d+)$/);
+  if (!match) {
+    throw `Invalid interaction id string: ${idString}`
+  }
+  return {
+    interactionType: match[1],
+    interactionId: Number(match[2])
+  };
+}
+
+
 const SELECT_RESOLUTION_ID = 'resolutionSelect';
-const CREATE_RESOLUTION_SELECT = new ActionRowBuilder()
-  .addComponents(
-    new SelectMenuBuilder()
-      .setCustomId(SELECT_RESOLUTION_ID)
-      .setPlaceholder('Resolution')
-      .addOptions(
-        {
-          label: '720p, 30FPS',
-          value: '720p30'
-        },
-        {
-          label: '720p, 60FPS',
-          value: '720p60'
-        },
-        {
-          label: '1080p, 30FPS',
-          value: '1080p30'
-        },
-        {
-          label: '1080p, 60FPS',
-          value: '1080p60'
-        }
-      )
-  );
+function createResolutionSelect(id: number): ActionRowBuilder {
+  const select = new ActionRowBuilder()
+    .addComponents(
+      new SelectMenuBuilder()
+        .setCustomId(makeInteractionId(SELECT_RESOLUTION_ID, id))
+        .setPlaceholder('Resolution')
+        .addOptions(
+          {
+            label: '720p, 30FPS',
+            value: '720p30'
+          },
+          {
+            label: '720p, 60FPS',
+            value: '720p60'
+          },
+          {
+            label: '1080p, 30FPS',
+            value: '1080p30'
+          },
+          {
+            label: '1080p, 60FPS',
+            value: '1080p60'
+          }
+        )
+    );
+  return select;
+}
 
 const PW_MODAL_ID = 'passwordModal';
-function createPasswordModal(): ModalBuilder {
+function createPasswordModal(id: number): ModalBuilder {
   const modal = new ModalBuilder()
-    .setCustomId(PW_MODAL_ID)
+    .setCustomId(makeInteractionId(PW_MODAL_ID, id))
     .setTitle('Room and Admin Password');
 
   const [ autoPw, autoAdminPw ] = generateMultiple(2, { length: 12, numbers: true });
@@ -80,20 +100,10 @@ export default async function respondToNonCommand(ctx: Context, interaction: Int
     return;
   }
 
-  const interactionId = interaction.customId;
-  const channelId = BigInt(interaction.channelId);
-  const userId = BigInt(interaction.member.user.id);
-  const roomCreationRequest = await ctx.db.RoomCreationRequest.findOne({
-    where: {
-      channelId: channelId,
-      userId: userId,
-      submitted: false,
-      valid: true
-    }
-  });
+  const { interactionType, interactionId } = getInteractionId(interaction.customId)
+  const roomCreationRequest = await ctx.db.RoomCreationRequest.findByPk(interactionId);
 
-  if (interactionId === SELECT_RESOLUTION_ID && !roomCreationRequest.image ||
-      interactionId === PW_MODAL_ID && !roomCreationRequest.resolution) {
+  if (!roomCreationRequest) {
     // eslint-disable-next-line no-extra-parens
     await (interaction as any).update({
       content: 'This request is stale, please run the /newroom command again or use your latest request.',
@@ -106,20 +116,20 @@ export default async function respondToNonCommand(ctx: Context, interaction: Int
 
   if (interaction.isSelectMenu()) {
 
-    if (interactionId === 'imageSelect') {
+    if (interactionType === 'imageSelect') {
       const image = interaction.values[0];
       logger.debug(`Image selected: ${image}`);
       roomCreationRequest.image = image;
       await interaction.update({
         content: 'Select a resolution and framerate',
-        components: [CREATE_RESOLUTION_SELECT as any]
+        components: [createResolutionSelect(interactionId) as any]
       });
       logger.info(`Updated image on request ${roomCreationRequest.id}`);
-    } else if (interactionId === SELECT_RESOLUTION_ID) {
+    } else if (interactionType === SELECT_RESOLUTION_ID) {
       const resolution = interaction.values[0];
       logger.debug(`Resolution selected: ${resolution}`);
       roomCreationRequest.resolution = resolution;
-      await interaction.showModal(createPasswordModal());
+      await interaction.showModal(createPasswordModal(interactionId));
       logger.info(`Updated resolution on request ${roomCreationRequest.id}`)
     } else {
       logger.error(`Unknown select menu id "${interactionId}"`);
@@ -130,7 +140,7 @@ export default async function respondToNonCommand(ctx: Context, interaction: Int
 
   } else if (interaction.isModalSubmit()) {
 
-    if (interactionId === PW_MODAL_ID) {
+    if (interactionType === PW_MODAL_ID) {
 
       const components = interaction.fields.components as any;
       roomCreationRequest.password = components[0].components[0].value;

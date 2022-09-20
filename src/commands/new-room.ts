@@ -6,6 +6,7 @@ import {
 import { Context } from '../util';
 import logger from 'winston';
 import { CommandHandler } from '../util';
+import { makeInteractionId } from '../interactions';
 
 
 export const SELECT_IMAGE_ID = 'imageSelect';
@@ -28,17 +29,17 @@ module.exports = {
             channelId: channelId,
             userId: userId,
             submitted: false,
-            valid: true
           }
         });
         if (currentRequests.length > 0) {
           logger.info(`User ${userId} already has an ongoing request`);
-          currentRequests[0].valid = false;
-          await currentRequests[0].save();
-          logger.debug(`Request ${currentRequests[0]} invalidated`);
+          await ctx.db.RoomCreationRequest.destroy({
+            where: { id: currentRequests[0].id }
+          });
+          logger.debug(`Request ${currentRequests[0]} deleted`);
         }
 
-        await ctx.db.RoomCreationRequest.create({
+        const request = await ctx.db.RoomCreationRequest.create({
           channelId: BigInt(interaction.channelId),
           userId: BigInt(interaction.member.user.id),
           interactionId: BigInt(interaction.id)
@@ -47,7 +48,7 @@ module.exports = {
         const row = new ActionRowBuilder()
           .addComponents(
             new SelectMenuBuilder()
-              .setCustomId(SELECT_IMAGE_ID)
+              .setCustomId(makeInteractionId(SELECT_IMAGE_ID, request.id))
               .setPlaceholder('Room image')
               .addOptions(
                 {
