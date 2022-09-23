@@ -174,11 +174,20 @@ export async function handleStatusUpdate(ctx: Context, body: any) {
   logger.debug('Retrieved room', room);
   room.status = status;
   await room.save();
-  if (status !== 'ready') {
-    logger.debug('Room not ready');
-    return;
+
+  switch (status) {
+  case 'ready':
+    await handleStatusReady(ctx, body, room);
+    break;
+  case 'destroyed':
+    await handleStatusDestroyed(ctx, room);
+    break;
   }
 
+}
+
+
+async function handleStatusReady(ctx: Context, body: any, room: any) {
   const name = body.name;
   const url = `https://${body.url}`;
   const image = body.image;
@@ -212,4 +221,22 @@ export async function handleStatusUpdate(ctx: Context, body: any) {
     ]
   });
   logger.info(`Room ${room.id} marked as ready in Discord`);
+}
+
+
+async function handleStatusDestroyed(ctx: Context, room: any) {
+  const roomRequest = await ctx.db.RoomCreationRequest.findByPk(room.RoomCreationRequestId);
+  const channel = await ctx.discordClient.channels.fetch(roomRequest.channelId) as TextChannel;
+  if (!channel) {
+    logger.error(`Channel ${roomRequest.channelId} no longer exists`);
+    return;
+  }
+  const user = await ctx.discordClient.users.fetch(roomRequest.userId);
+  if (!user) {
+    logger.error(`User ${roomRequest.userId} no longer exists`);
+  }
+  // if this was from a command, make sure the response has time to make it first
+  setTimeout(async () => {
+    await channel.send(`${user} Your room has been deleted, thanks for watching 🐱`);
+  }, 1500);
 }

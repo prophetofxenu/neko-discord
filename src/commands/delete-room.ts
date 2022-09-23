@@ -36,7 +36,7 @@ module.exports = {
         logger.info(`Deleting room ${room.dataValues.id}`);
         await deleteRoom(ctx, room);
 
-        await interaction.reply({ content: 'Your room has been deleted.' });
+        await interaction.reply({ content: 'Your room is being deleted...' });
 
       }
     }
