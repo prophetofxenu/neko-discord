@@ -11,6 +11,9 @@ function room(sequelize: Sequelize) {
     },
     nekoDoId: {
       type: DataTypes.INTEGER
+    },
+    expires: {
+      type: DataTypes.DATE
     }
   });
 }

@@ -1,17 +1,26 @@
 import {
   ActionRowBuilder,
+  ButtonInteraction,
   CacheType,
   Interaction,
   ModalActionRowComponentBuilder,
   ModalBuilder,
+  ModalSubmitInteraction,
   SelectMenuBuilder,
+  SelectMenuInteraction,
   TextInputBuilder,
   TextInputStyle
 } from 'discord.js';
 import { generateMultiple } from 'generate-password';
 import logger from 'winston';
-import { submitRoomRequest } from './neko-do';
+import {
+  extendRoom,
+  submitRoomRequest
+} from './neko-do';
 import { Context } from './util';
+
+
+export const EXTEND_BUTTON_ID = 'extend';
 
 
 export function makeInteractionId(label: string, id: number): string {
@@ -89,18 +98,9 @@ function createPasswordModal(id: number): ModalBuilder {
 }
 
 
-export default async function respondToNonCommand(ctx: Context, interaction: Interaction<CacheType>) {
+async function respondToRoomRequest(ctx: Context, interaction: SelectMenuInteraction<CacheType> | ModalSubmitInteraction<CacheType>) {
 
-  if (!interaction.isSelectMenu() && !interaction.isModalSubmit()) {
-    logger.error('Unknown interaction type', interaction);
-    return;
-  }
-  if (!interaction.channelId || !interaction.member?.user.id) {
-    logger.error('Missing channel or user id', interaction);
-    return;
-  }
-
-  const { interactionType, interactionId } = getInteractionId(interaction.customId)
+  const { interactionType, interactionId } = getInteractionId(interaction.customId);
   const roomCreationRequest = await ctx.db.RoomCreationRequest.findByPk(interactionId);
 
   if (!roomCreationRequest) {
@@ -159,6 +159,49 @@ export default async function respondToNonCommand(ctx: Context, interaction: Int
 
   } else {
     logger.error('Unknown interaction');
+  }
+
+}
+
+
+async function respondToRoom(ctx: Context, interaction: ButtonInteraction<CacheType>) {
+
+  const { interactionType, interactionId } = getInteractionId(interaction.customId);
+
+  if (interaction.isButton()) {
+    if (interactionType === EXTEND_BUTTON_ID) {
+      await extendRoom(ctx, interactionId);
+      await interaction.update({
+        content: 'Your room has been extended by one hour.',
+        components: []
+      });
+    }
+  }
+
+}
+
+
+export default async function respondToNonCommand(ctx: Context, interaction: Interaction<CacheType>) {
+
+  if (!interaction.isSelectMenu() && !interaction.isModalSubmit() && !interaction.isButton()) {
+    logger.error('Unknown interaction type', interaction);
+    return;
+  }
+  if (!interaction.channelId || !interaction.member?.user.id) {
+    logger.error('Missing channel or user id', interaction);
+    return;
+  }
+
+  const { interactionType } = getInteractionId(interaction.customId);
+
+  if (interactionType === 'imageSelect' ||
+      interactionType === SELECT_RESOLUTION_ID ||
+      interactionType === PW_MODAL_ID) {
+    await respondToRoomRequest(ctx, interaction as any);
+  } else if (interactionType === EXTEND_BUTTON_ID) {
+    await respondToRoom(ctx, interaction as any);
+  } else {
+    throw `Unknown interaction ${interaction}`;
   }
 
 }

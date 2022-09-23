@@ -1,7 +1,17 @@
 import { Context } from './util';
 import axios from 'axios';
 import logger from 'winston';
-import { EmbedBuilder, TextChannel } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  TextChannel
+} from 'discord.js';
+import {
+  makeInteractionId,
+  EXTEND_BUTTON_ID
+} from './interactions';
 
 
 async function makeRequest(ctx: Context, method: string, route: string, body: any) {
@@ -64,6 +74,24 @@ export async function submitRoomRequest(ctx: Context, request: any) {
 }
 
 
+export async function extendRoom(ctx: Context, roomId: number) {
+
+  const room = await ctx.db.Room.findByPk(roomId);
+  if (!room) {
+    logger.error(`Attempted to renew room ${roomId} but it doesn't exist`);
+    return;
+  }
+  const url = `room/${room.nekoDoId}`;
+  const response = await makeRequest(ctx, 'PUT', url, {}) as any;
+  logger.debug('Received response from neko-do', response);
+  room.expires = response.data.room.expires;
+  await room.save();
+  logger.info(`Renewed room ${room.id} (now expires at ${room.expires})`);
+  await setRoomTimer(ctx, room.id);
+
+}
+
+
 export async function deleteRoom(ctx: Context, room: any) {
 
   const url = `room/${room.dataValues.nekoDoId}`;
@@ -72,6 +100,65 @@ export async function deleteRoom(ctx: Context, room: any) {
 
   logger.info(`Room ${room.dataValues.id} destroyed`);
 
+  if (ctx.roomTimers.has(room.id)) {
+    clearTimeout(ctx.roomTimers.get(room.id));
+    ctx.roomTimers.delete(room.id);
+  }
+
+}
+
+
+async function setRoomTimer(ctx: Context, roomId: number) {
+
+  const func = async () => {
+    logger.info(`Alerting user that room ${roomId} is about to expire`);
+    const room = await ctx.db.Room.findByPk(roomId);
+    const roomRequest = await ctx.db.RoomCreationRequest.findByPk(room.RoomCreationRequestId);
+    const channel = await ctx.discordClient.channels.fetch(roomRequest.channelId) as TextChannel;
+    if (!channel) {
+      logger.error(`Channel ${roomRequest.channelId} was not found`);
+      return;
+    }
+    const user = await ctx.discordClient.users.fetch(roomRequest.userId);
+    if (!user) {
+      logger.error(`User ${roomRequest.userId} was not found`);
+      return;
+    }
+
+    const row = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(makeInteractionId(EXTEND_BUTTON_ID, room.id))
+          .setLabel('+1 Hour')
+          .setStyle(ButtonStyle.Primary)
+      );
+
+    await channel.send({
+      content: `${user} Your room is about to expire!`,
+      components: [row as any]
+    });
+    ctx.roomTimers.delete(room.id);
+  };
+
+  const room = await ctx.db.Room.findByPk(roomId);
+  const delay = room.expires - 1000 * 60 * 5 - new Date().getTime();
+  if (delay > 5000) {
+    ctx.roomTimers.set(roomId, setTimeout(func, delay));
+    logger.info(`Set room timer for ${roomId} in ${delay / 1000} seconds`);
+  }
+}
+
+
+export async function loadRoomTimers(ctx: Context) {
+  logger.info('Loading room timers');
+  const rooms = await ctx.db.Room.findAll({
+    where: {
+      status: 'ready'
+    }
+  });
+  for (const room of rooms) {
+    await setRoomTimer(ctx, room.id);
+  }
 }
 
 
@@ -101,11 +188,11 @@ export async function handleStatusUpdate(ctx: Context, body: any) {
   const expires = new Date(body.expires);
   const expireStr = `${expires.getHours()}:${expires.getMinutes()}`;
 
-  const roomRequest = await ctx.db.RoomCreationRequest.findOne({
-    where: {
-      id: room.RoomCreationRequestId
-    }
-  });
+  room.expires = expires;
+  await room.save();
+  setRoomTimer(ctx, room.id);
+
+  const roomRequest = await ctx.db.RoomCreationRequest.findByPk(room.RoomCreationRequestId);
   const channelId = roomRequest.channelId;
   const channel = await ctx.discordClient.channels.fetch(channelId.toString()) as TextChannel;
   await channel.send({

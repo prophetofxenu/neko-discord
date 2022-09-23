@@ -14,6 +14,7 @@ export interface Context {
     Room: ModelStatic<any>,
     RoomCreationRequest: ModelStatic<any>
   },
+  roomTimers: Map<number, NodeJS.Timeout>,
   info: {
     nekoDoUrl: string,
     nekoDoUser: string,

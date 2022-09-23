@@ -20,6 +20,7 @@ import setupDb from './models/setup';
 import respondToNonCommand from './interactions';
 import {
   handleStatusUpdate,
+  loadRoomTimers,
   login
 } from './neko-do';
 
@@ -67,6 +68,7 @@ discordClient.once('ready', () => {
   const ctx: Context = {
     discordClient: discordClient,
     db: db,
+    roomTimers: new Map<number, NodeJS.Timeout>(),
     info: {
       nekoDoUrl: NEKO_DO_URL,
       nekoDoUser: NEKO_DO_USER,
@@ -107,6 +109,8 @@ discordClient.once('ready', () => {
       logger.error(error);
     }
   });
+
+  await loadRoomTimers(ctx);
 
   expServer.post('/status', async (req, res) => {
     res.status(200).send();
