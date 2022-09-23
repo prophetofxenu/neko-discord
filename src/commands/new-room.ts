@@ -7,6 +7,7 @@ import { Context } from '../util';
 import logger from 'winston';
 import { CommandHandler } from '../util';
 import { makeInteractionId } from '../interactions';
+import { Op } from 'sequelize';
 
 
 export const SELECT_IMAGE_ID = 'imageSelect';
@@ -23,6 +24,28 @@ module.exports = {
 
         const channelId = BigInt(interaction.channelId);
         const userId = BigInt(interaction.member.user.id);
+
+        const currentRoom = await ctx.db.RoomCreationRequest.findAll({
+          where: {
+            channelId: channelId,
+            userId: userId,
+            '$Room.status$': {
+              [Op.or]: {
+                [Op.ne]: 'destroyed',
+                [Op.is]: null
+              }
+            }
+          },
+          include: [{
+            model: ctx.db.Room,
+            as: 'Room',
+            required: true
+          }]
+        });
+        if (currentRoom.length > 0) {
+          await interaction.reply('You already have an active room. Please delete that one before creating another.');
+          return;
+        }
 
         const currentRequests = await ctx.db.RoomCreationRequest.findAll({
           where: {
