@@ -168,6 +168,22 @@ async function respondToRoom(ctx: Context, interaction: ButtonInteraction<CacheT
 
   const { interactionType, interactionId } = getInteractionId(interaction.customId);
 
+  const existingRoom = await ctx.db.RoomCreationRequest.findOne({
+    where: {
+      '$Room.id$': interactionId
+    },
+    include: [{
+      model: ctx.db.Room,
+      as: 'Room',
+      required: true
+    }],
+  });
+  const userId = existingRoom.userId;
+  if (userId !== interaction.user.id) {
+    await interaction.reply(`${interaction.user} This isn't for you 😠`);
+    return;
+  }
+
   if (interaction.isButton()) {
     if (interactionType === EXTEND_BUTTON_ID) {
       await extendRoom(ctx, interactionId);
