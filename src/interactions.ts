@@ -150,7 +150,7 @@ async function respondToRoomRequest(ctx: Context, interaction: SelectMenuInterac
 
       // eslint-disable-next-line no-extra-parens
       await (interaction as any).update({
-        content: 'Your request is being submitted! This will take 3-5 minutes.',
+        content: 'Your request is being created! This will take 3-5 minutes.',
         components: []
       });
 
@@ -186,11 +186,18 @@ async function respondToRoom(ctx: Context, interaction: ButtonInteraction<CacheT
 
   if (interaction.isButton()) {
     if (interactionType === EXTEND_BUTTON_ID) {
-      await extendRoom(ctx, interactionId);
-      await interaction.update({
-        content: 'Your room has been extended by one hour.',
-        components: []
-      });
+      if (existingRoom.Room.status !== 'ready') {
+        await interaction.update({
+          content: 'This room has already expired. Please request a new one.',
+          components: []
+        });
+      } else {
+        await extendRoom(ctx, interactionId);
+        await interaction.update({
+          content: 'Your room has been extended by one hour.',
+          components: []
+        });
+      }
     }
   }
 
