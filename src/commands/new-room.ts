@@ -22,6 +22,8 @@ module.exports = {
 
       execute: async (interaction: any) => {
 
+        logger.info(`Processing room request for ${interaction.user.username} in #${interaction.channel.name} (${interaction.guild.name})`);
+
         const channelId = BigInt(interaction.channelId);
         const userId = BigInt(interaction.member.user.id);
 

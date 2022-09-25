@@ -25,7 +25,7 @@ import {
 } from './neko-do';
 
 
-logger.add(new logger.transports.Console({ level: 'debug', format: logger.format.simple() }));
+logger.add(new logger.transports.Console({ level: 'info', format: logger.format.simple() }));
 
 
 dotenv.config();
@@ -78,6 +78,8 @@ discordClient.once('ready', () => {
   };
 
   await login(ctx);
+  // get a new login token every 12ish hours
+  setInterval(async () => await login(ctx), 11.9 * 60 * 1000);
 
   // load commands
   const commands = new Collection();
@@ -96,8 +98,6 @@ discordClient.once('ready', () => {
       await respondToNonCommand(ctx, interaction);
       return;
     }
-
-    logger.info('Command received');
 
     const command = commands.get(interaction.commandName) as CommandHandler;
     if (!command) return;

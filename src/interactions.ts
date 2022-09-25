@@ -8,6 +8,7 @@ import {
   ModalSubmitInteraction,
   SelectMenuBuilder,
   SelectMenuInteraction,
+  TextChannel,
   TextInputBuilder,
   TextInputStyle
 } from 'discord.js';
@@ -216,6 +217,7 @@ export default async function respondToNonCommand(ctx: Context, interaction: Int
   }
 
   const { interactionType } = getInteractionId(interaction.customId);
+  logger.info(`Processing interaction ${interactionType} for ${interaction.user.username} in #${(interaction.channel as TextChannel).name} (${interaction.guild?.name})`);
 
   if (interactionType === 'imageSelect' ||
       interactionType === SELECT_RESOLUTION_ID ||

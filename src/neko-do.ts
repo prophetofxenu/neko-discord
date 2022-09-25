@@ -25,6 +25,7 @@ async function makeRequest(ctx: Context, method: string, route: string, body: an
     data: body,
     headers: headers
   });
+  logger.debug('neko-do response', response);
   return response;
 }
 
@@ -36,6 +37,7 @@ export async function login(ctx: Context) {
   };
   const response = await makeRequest(ctx, 'POST', 'login', body);
   ctx.info.bearerToken = response.data.token;
+  logger.info('Logged into neko-do');
 }
 
 
@@ -70,7 +72,7 @@ export async function submitRoomRequest(ctx: Context, request: any) {
   await room.save();
   logger.debug(`Created room ${room.id}`);
 
-  logger.info(`Room ${room.id} is being created`);
+  logger.info(`Room ${room.id} request submitted`);
 }
 
 
@@ -97,8 +99,6 @@ export async function deleteRoom(ctx: Context, room: any) {
   const url = `room/${room.dataValues.nekoDoId}`;
   const response = await makeRequest(ctx, 'DELETE', url, {});
   logger.debug('Received response from neko-do', response);
-
-  logger.info(`Room ${room.dataValues.id} destroyed`);
 
   if (ctx.roomTimers.has(room.id)) {
     clearTimeout(ctx.roomTimers.get(room.id));
@@ -174,6 +174,7 @@ export async function handleStatusUpdate(ctx: Context, body: any) {
   logger.debug('Retrieved room', room);
   room.status = status;
   await room.save();
+  logger.info(`Room ${room.id} status updated to ${status}`);
 
   switch (status) {
   case 'ready':
@@ -235,6 +236,7 @@ async function handleStatusDestroyed(ctx: Context, room: any) {
   if (!user) {
     logger.error(`User ${roomRequest.userId} no longer exists`);
   }
+  logger.info(`Room ${room.id} deleted`);
   // if this was from a command, make sure the response has time to make it first
   setTimeout(async () => {
     await channel.send(`${user} Your room has been deleted, thanks for watching 🐱`);
