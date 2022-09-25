@@ -19,6 +19,7 @@ import {
   submitRoomRequest
 } from './neko-do';
 import { Context } from './util';
+import strftime from 'strftime';
 
 
 export const EXTEND_BUTTON_ID = 'extend';
@@ -151,7 +152,7 @@ async function respondToRoomRequest(ctx: Context, interaction: SelectMenuInterac
 
       // eslint-disable-next-line no-extra-parens
       await (interaction as any).update({
-        content: 'Your request is being created! This will take 3-5 minutes.',
+        content: 'Your room is being created! This will take 3-5 minutes.',
         components: []
       });
 
@@ -193,9 +194,10 @@ async function respondToRoom(ctx: Context, interaction: ButtonInteraction<CacheT
           components: []
         });
       } else {
-        await extendRoom(ctx, interactionId);
+        const room = await extendRoom(ctx, interactionId);
+        const expireStr = strftime('%b %d, %l:%M %p', room.expires);
         await interaction.update({
-          content: 'Your room has been extended by one hour.',
+          content: `Your room will now expire at ${expireStr}.`,
           components: []
         });
       }

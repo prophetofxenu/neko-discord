@@ -12,6 +12,7 @@ import {
   makeInteractionId,
   EXTEND_BUTTON_ID
 } from './interactions';
+import strftime from 'strftime';
 
 
 async function makeRequest(ctx: Context, method: string, route: string, body: any) {
@@ -90,6 +91,7 @@ export async function extendRoom(ctx: Context, roomId: number) {
   await room.save();
   logger.info(`Renewed room ${room.id} (now expires at ${room.expires})`);
   await setRoomTimer(ctx, room.id);
+  return room;
 
 }
 
@@ -196,7 +198,7 @@ async function handleStatusReady(ctx: Context, body: any, room: any) {
   const fps = body.fps;
   const password = body.password;
   const expires = new Date(body.expires);
-  const expireStr = `${expires.getHours()}:${expires.getMinutes()}`;
+  const expireStr = strftime('%b %d, %l:%M %p', expires);
 
   room.expires = expires;
   await room.save();
@@ -205,7 +207,9 @@ async function handleStatusReady(ctx: Context, body: any, room: any) {
   const roomRequest = await ctx.db.RoomCreationRequest.findByPk(room.RoomCreationRequestId);
   const channelId = roomRequest.channelId;
   const channel = await ctx.discordClient.channels.fetch(channelId.toString()) as TextChannel;
+  const user = await ctx.discordClient.users.fetch(roomRequest.userId);
   await channel.send({
+    content: `${user}`,
     embeds: [
       new EmbedBuilder()
         .setColor(0x0099FF)
