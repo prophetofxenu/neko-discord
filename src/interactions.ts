@@ -73,7 +73,7 @@ const PW_MODAL_ID = 'passwordModal';
 function createPasswordModal(id: number): ModalBuilder {
   const modal = new ModalBuilder()
     .setCustomId(makeInteractionId(PW_MODAL_ID, id))
-    .setTitle('Room and Admin Password');
+    .setTitle('Set Room and Admin Passwords');
 
   const [ autoPw, autoAdminPw ] = generateMultiple(2, { length: 12, numbers: true });
 
