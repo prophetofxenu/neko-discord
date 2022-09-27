@@ -79,7 +79,7 @@ discordClient.once('ready', () => {
 
   setTimeout(async () => await login(ctx), 5000);
   // get a new login token every 12ish hours
-  setInterval(async () => await login(ctx), 11.9 * 60 * 1000);
+  setInterval(async () => await login(ctx), 11.9 * 60 * 60 * 1000);
 
   // load commands
   const commands = new Collection();
