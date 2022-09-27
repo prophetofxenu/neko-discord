@@ -77,7 +77,7 @@ discordClient.once('ready', () => {
     }
   };
 
-  await login(ctx);
+  setTimeout(async () => await login(ctx), 5000);
   // get a new login token every 12ish hours
   setInterval(async () => await login(ctx), 11.9 * 60 * 1000);
 
