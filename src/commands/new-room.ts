@@ -121,6 +121,10 @@ module.exports = {
                   value: 'vncviewer'
                 },
                 {
+                  label: 'KDE',
+                  value: 'kde'
+                },
+                {
                   label: 'XFCE',
                   value: 'xfce'
                 },
