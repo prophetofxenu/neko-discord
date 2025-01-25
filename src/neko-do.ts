@@ -185,6 +185,9 @@ export async function handleStatusUpdate(ctx: Context, body: any) {
   case 'destroyed':
     await handleStatusDestroyed(ctx, room);
     break;
+  case 'failed':
+    await handleStatusFailed(ctx, room);
+    break;
   }
 
 }
@@ -245,4 +248,19 @@ async function handleStatusDestroyed(ctx: Context, room: any) {
   setTimeout(async () => {
     await channel.send(`${user} Your room has been deleted, thanks for watching 🐱`);
   }, 1500);
+}
+
+async function handleStatusFailed(ctx: Context, room: any) {
+  const roomRequest = await ctx.db.RoomCreationRequest.findByPk(room.RoomCreationRequestId);
+  const channel = await ctx.discordClient.channels.fetch(roomRequest.channelId) as TextChannel;
+  if (!channel) {
+    logger.error(`Channel ${roomRequest.channelId} no longer exists`);
+    return;
+  }
+  const user = await ctx.discordClient.users.fetch(roomRequest.userId);
+  if (!user) {
+    logger.error(`User ${roomRequest.userId} no longer exists`);
+  }
+  logger.info(`Room ${room.id} failed`);
+  await channel.send(`${user} Your room failed to create. Please try again. If this has happened multiple times in a row, please contact an admin.`);
 }
