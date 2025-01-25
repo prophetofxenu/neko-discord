@@ -1,4 +1,4 @@
-FROM node:16
+FROM node:22-alpine
 
 ENV TZ=America/New_York
 WORKDIR /usr/src/app
