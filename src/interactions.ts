@@ -126,13 +126,13 @@ async function respondToRoomRequest(ctx: Context, interaction: SelectMenuInterac
         content: 'Select a resolution and framerate',
         components: [createResolutionSelect(interactionId) as any]
       });
-      logger.info(`Updated image on request ${roomCreationRequest.id}`);
+      logger.verbose(`Updated image on request ${roomCreationRequest.id}`);
     } else if (interactionType === SELECT_RESOLUTION_ID) {
       const resolution = interaction.values[0];
       logger.debug(`Resolution selected: ${resolution}`);
       roomCreationRequest.resolution = resolution;
       await interaction.showModal(createPasswordModal(interactionId));
-      logger.info(`Updated resolution on request ${roomCreationRequest.id}`)
+      logger.verbose(`Updated resolution on request ${roomCreationRequest.id}`)
     } else {
       logger.error(`Unknown select menu id "${interactionId}"`);
       return;
@@ -148,7 +148,7 @@ async function respondToRoomRequest(ctx: Context, interaction: SelectMenuInterac
       roomCreationRequest.password = components[0].components[0].value;
       roomCreationRequest.admin_password = components[1].components[0].value;
       await roomCreationRequest.save();
-      logger.info(`Updated passwords on request ${roomCreationRequest.id}`);
+      logger.verbose(`Updated passwords on request ${roomCreationRequest.id}`);
 
       // eslint-disable-next-line no-extra-parens
       await (interaction as any).update({

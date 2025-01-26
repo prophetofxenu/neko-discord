@@ -100,7 +100,13 @@ export async function deleteRoom(ctx: Context, room: any) {
 
   const url = `room/${room.dataValues.nekoDoId}`;
   const response = await makeRequest(ctx, 'DELETE', url, {});
-  logger.debug('Received response from neko-do', response);
+  logger.verbose('Received response from neko-do', response);
+
+  const roomRequest = await ctx.db.RoomCreationRequest.findByPk(room.RoomCreationRequestId);
+  roomRequest.password = '';
+  roomRequest.admin_password = '';
+  await roomRequest.save();
+  logger.verbose('Cleared passwords for', room.id);
 
   if (ctx.roomTimers.has(room.id)) {
     clearTimeout(ctx.roomTimers.get(room.id));
@@ -195,11 +201,11 @@ export async function handleStatusUpdate(ctx: Context, body: any) {
 
 async function handleStatusReady(ctx: Context, body: any, room: any) {
   const name = body.name;
-  const url = `https://${body.url}`;
+  const password = body.password;
+  const url = `https://${body.url}/?pwd=${password}`;
   const image = body.image;
   const resolution = body.resolution;
   const fps = body.fps;
-  const password = body.password;
   const expires = new Date(body.expires);
   const expireStr = strftime('%b %d, %l:%M %p', expires);
 
